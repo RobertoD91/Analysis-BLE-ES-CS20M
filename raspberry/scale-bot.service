@@ -1,0 +1,18 @@
+[Unit]
+Description=BLE scale: measurement store and Telegram notifications
+Wants=bluetooth.target network-online.target
+After=bluetooth.target network-online.target
+
+[Service]
+User=scalebot
+Group=scalebot
+# the bluetooth group may talk to BlueZ over D-Bus
+SupplementaryGroups=bluetooth
+StateDirectory=scale-bot
+WorkingDirectory=/var/lib/scale-bot
+ExecStart=/opt/scale-bot/venv/bin/scale-bot --config /etc/scale-bot.toml listen
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

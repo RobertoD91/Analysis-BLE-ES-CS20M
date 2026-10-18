@@ -1,0 +1,8 @@
+{
+  "name": "ble-scale",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"test/*.test.js\""
+  }
+}

@@ -1,0 +1,34 @@
+name: Raspberry Pi service
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Raspberry Pi OS Bookworm and Trixie
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install ./raspberry
+      - run: python -m unittest -v
+        working-directory: raspberry/tests
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t scale-bot raspberry
+      - name: Replay a sample inside the container
+        run: docker run --rm -v "$PWD/samples:/samples:ro" scale-bot replay /samples/complete-weighing.pklg | tee /dev/stderr | grep -q "75.00 kg"

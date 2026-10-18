@@ -1,0 +1,18 @@
+# scale-bot configuration for the systemd install: it lives in /etc/scale-bot.toml.
+# After every change: sudo systemctl restart scale-bot
+# (With Docker use the .env file instead: see .env.example.)
+
+[telegram]
+# Bot token from @BotFather (/newbot)
+token = ""
+# Chat that receives the measurements (you, or a group you added the bot to).
+# To find it: write a message to the bot, then run "scale-bot find-chat"
+chat_id = ""
+
+[scale]
+# MAC address of your scale, to ignore identical scales next door.
+# Empty = any scale speaking this protocol
+mac = ""
+
+[storage]
+database = "/var/lib/scale-bot/measurements.sqlite3"

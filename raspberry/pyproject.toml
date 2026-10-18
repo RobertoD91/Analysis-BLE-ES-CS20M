@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scale-bot"
+version = "0.1.0"
+description = "Listen to a BLE broadcast scale, store the measurements and send them to Telegram"
+requires-python = ">=3.11"
+dependencies = ["bleak>=0.22"]
+
+[project.scripts]
+scale-bot = "scale_bot.__main__:main"
+
+[tool.setuptools]
+packages = ["scale_bot"]

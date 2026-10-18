@@ -1,0 +1,14 @@
+name: scale-bot
+
+services:
+  scale-bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      # The container uses the host's BlueZ over D-Bus: no privileged mode or host network needed
+      - /run/dbus:/run/dbus:ro
+      - data:/data
+
+volumes:
+  data:
