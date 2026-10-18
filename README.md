@@ -116,6 +116,18 @@ runs with Docker Compose or as a systemd service; see its [README](raspberry/REA
 The recorded captures work as test fixtures: every component is checked against the same real
 traffic, without a scale or a Bluetooth adapter on the CI runner.
 
+## Credits
+
+Others decoded the `aa bb` frames before us.
+[renpho-escs20m](https://github.com/ronnnnnnnnnnnnn/renpho-escs20m) supports this exact revision
+(FCC ID `2APXUES-CS20M`), tells the ES-CS20M revisions apart and worked out the status bits. Its
+client, run on a Raspberry Pi next to our scale, reported the final weight. If you need a maintained
+Python library for these scales, use that one. [openScale](https://github.com/oliexdev/openScale)
+and [bluetooth_scale](https://github.com/asd333111/bluetooth_scale) decode the same frames too.
+
+The analysis, the code and this documentation were written with the help of an AI assistant
+(Claude).
+
 ## Ethics and scope
 
 Only analyse devices you own. The samples are anonymised: the scale's MAC address, the session token
