@@ -9,7 +9,11 @@ advertisements, spots the final weight, stores it in SQLite and sends it to a Te
 −0.40 kg since 2026-10-15
 ```
 
-The Raspberry Pi only listens, so it works alongside the phone app without disturbing it.
+The Raspberry Pi only listens, so it should work alongside the phone app without disturbing it.
+
+This service has not been tried on a real Raspberry Pi with the scale yet. The [tests](#development) run
+on recorded captures with a fake Telegram server, but nobody has checked it with BlueZ, Docker on
+the Pi and a real scale. If you try it, please open an issue with the result.
 
 ## What you need
 

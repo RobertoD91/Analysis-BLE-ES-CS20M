@@ -65,4 +65,5 @@ bit `0x01`. On our unit both bits arrive in the same frame, so our captures cann
   captured advertisements only. On a Raspberry Pi next to the scale it reported the final weight,
   also with the phone switched off.
 - A browser client, the progressive web app, and a Raspberry Pi to Telegram service, both tested
-  in CI against the recorded samples.
+  in CI against the recorded samples. The web app was also tried with the real scale; the Raspberry
+  Pi service not yet.

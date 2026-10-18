@@ -106,6 +106,10 @@ every push to `master`, publishes `webapp/` to GitHub Pages. To enable it on a f
 clock from a Raspberry Pi, stores every final weight in SQLite and sends it to a Telegram chat. It
 runs with Docker Compose or as a systemd service; see its [README](raspberry/README.md).
 
+It has not been tested on a real Raspberry Pi with the scale yet. So far it has only run in CI,
+against the recorded samples and a fake Telegram server. The live test mentioned under
+[Credits](#credits) used renpho-escs20m's client, not this service.
+
 ## Continuous integration
 
 | Workflow | What it does |
