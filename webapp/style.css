@@ -65,12 +65,43 @@ main {
 
 h1 { margin: 0; font-size: 1.5rem; }
 
+/* "Fork me on GitHub" band across the top right corner; the box clips the band's ends. */
+.fork {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10rem;
+  height: 10rem;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+.fork a {
+  position: absolute;
+  top: 2.75rem;
+  right: -3rem;
+  width: 13rem;
+  padding: 0.3rem 0;
+  transform: rotate(45deg);
+  background: var(--accent);
+  color: var(--accent-text);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  pointer-events: auto;
+}
+.fork a:focus-visible { outline: 2px solid var(--text); outline-offset: -4px; }
+
 .top {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
   gap: 0.75rem;
+  /* Keep clear of the ribbon when the page margin is too narrow to hold it. */
+  padding-right: clamp(0px, calc(6rem - (100vw - 34rem) / 2), 6rem);
 }
 .prefs { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .toggle {

@@ -20,11 +20,14 @@
   <script type="module" src="app.js"></script>
 </head>
 <body>
+  <div class="fork">
+    <a href="https://github.com/RobertoD91/Analysis-BLE-ES-CS20M" target="_blank" rel="noopener">Fork me on GitHub</a>
+  </div>
   <main>
     <header class="top">
       <div>
         <h1 data-i18n="title">BLE Scale</h1>
-        <p class="muted" data-i18n="subtitle">Reads the weight from the scale's advertisements, without connecting.</p>
+        <p class="muted" data-i18n="subtitle">Reads the weight from the scale's advertisements, without pairing.</p>
       </div>
       <div class="prefs">
         <div class="toggle" role="group" aria-label="Language" data-i18n-label="language">
@@ -50,7 +53,7 @@
     </section>
 
     <div class="actions">
-      <button id="listen" class="primary" type="button" data-i18n="listen">Listen to the scale</button>
+      <button id="listen" class="primary" type="button" data-i18n="listen">Connect to the scale</button>
       <button id="stop" type="button" data-i18n="stop" hidden>Stop</button>
       <label class="button" for="replay-file" data-i18n="replay">Replay a .pklg capture</label>
       <input id="replay-file" type="file" accept=".pklg" hidden>

@@ -4,6 +4,9 @@ An iPhone capture of a Bluetooth LE bathroom scale, decoded byte by byte, and tw
 the result: a web app that reads the scale from the browser, and a Raspberry Pi service that sends
 every weighing to Telegram.
 
+Try the web app at <https://robertodisanto.it/Analysis-BLE-ES-CS20M/>. Without a scale, it can
+replay one of the [sample captures](samples/).
+
 This is teaching material for the [CyberHackAdemy](https://cyberhackademy.unina.it/) at the
 University of Naples Federico II. One small, real device is used to teach three topics:
 
@@ -69,7 +72,8 @@ python3 tools/decode_capture.py samples/complete-weighing.pklg
 
 ## The web app
 
-[`webapp/`](webapp/) is a static progressive web app with no build step and no dependencies.
+[`webapp/`](webapp/) is a static progressive web app with no build step and no dependencies. It is
+published at <https://robertodisanto.it/Analysis-BLE-ES-CS20M/>.
 
 - It listens to the scale's advertisements with Web Bluetooth (`watchAdvertisements()`, or
   `requestLEScan()` where available), since there is nothing to connect to.
