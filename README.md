@@ -79,6 +79,8 @@ python3 tools/decode_capture.py samples/complete-weighing.pklg
   weigh-in.
 - It warns when the weight goes back to zero without a final frame.
 - It installs as an app and works offline thanks to a service worker.
+- The interface is in English and Italian, following the browser's language until you pick one,
+  and the theme can be light, dark or automatic (following the system).
 
 It needs Chrome or Edge on a desktop, with Bluetooth on and the
 `chrome://flags/#enable-experimental-web-platform-features` flag enabled: Chrome still keeps

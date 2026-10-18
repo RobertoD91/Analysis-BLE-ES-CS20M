@@ -1,5 +1,6 @@
+/* Light by default; dark from the system setting (theme "Auto") or from the explicit choice. */
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --bg: #f4f6f5;
   --surface: #ffffff;
   --text: #17201d;
@@ -13,8 +14,24 @@
   --code-bg: #eef2f0;
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #101513;
+  --surface: #18201d;
+  --text: #e6ece9;
+  --muted: #95a39e;
+  --border: #2a3531;
+  --accent: #2dd4bf;
+  --accent-text: #06201c;
+  --live: #e3b341;
+  --final: #2dd4bf;
+  --final-bg: #12302b;
+  --code-bg: #212b28;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --bg: #101513;
     --surface: #18201d;
     --text: #e6ece9;
@@ -47,6 +64,33 @@ main {
 }
 
 h1 { margin: 0; font-size: 1.5rem; }
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.prefs { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.toggle button {
+  border: 0;
+  border-radius: 0;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8125rem;
+  background: transparent;
+  color: var(--muted);
+}
+.toggle button + button { border-left: 1px solid var(--border); }
+.toggle button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+.toggle button:focus-visible { outline-offset: -2px; }
 h2 { margin: 0 0 0.5rem; font-size: 1rem; }
 header p { margin: 0.25rem 0 0; }
 .muted { color: var(--muted); }

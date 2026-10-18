@@ -1,7 +1,7 @@
 // Network first, then cache: online it always gets the latest version, offline it still works.
 const CACHE = 'ble-scale-v1';
 const SHELL = [
-  './', 'index.html', 'style.css', 'app.js', 'protocol.js', 'pklg.js', 'manifest.webmanifest',
+  './', 'index.html', 'style.css', 'app.js', 'protocol.js', 'pklg.js', 'i18n.js', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
 ];
 

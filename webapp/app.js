@@ -1,5 +1,6 @@
 import { COMPANY_ID, MAGIC, parseScaleFrame, MeasurementTracker } from './protocol.js';
 import { scaleFramesFromPklg } from './pklg.js';
+import { STRINGS, pickLanguage } from './i18n.js';
 
 // Web Bluetooth only exists over https, but a GitHub Pages custom domain also answers over http.
 if (location.protocol === 'http:' && !['localhost', '127.0.0.1'].includes(location.hostname)) {
@@ -8,6 +9,8 @@ if (location.protocol === 'http:' && !['localhost', '127.0.0.1'].includes(locati
 
 const HISTORY_KEY = 'ble-scale:history';
 const DEVICE_KEY = 'ble-scale:device';
+const LANGUAGE_KEY = 'ble-scale:language';
+const THEME_KEY = 'ble-scale:theme'; // also read by the inline script in index.html
 const HISTORY_MAX = 100;
 const LOG_MAX = 60;
 const EXPORT_MAX = 20000;
@@ -25,18 +28,6 @@ const ui = {
   message: $('message'), history: $('history'), historyEmpty: $('history-empty'),
   clearHistory: $('clear-history'), log: $('log'), downloadLog: $('download-log'),
 };
-// numbers and dates follow the visitor's locale
-const kg = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const when = new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'short' });
-
-let tracker = new MeasurementTracker();
-let frameCount = 0;
-let logLines = [];
-let exportRows = []; // every frame of the session, for the CSV download
-let source = 'watch'; // how frames arrive: watch, scan or replay
-let weighStartCounter = null; // counter when a weight appeared, until a final frame or 0 kg
-let stopCurrent = null; // stops the listening or replay in progress
-let onMeasurement = saveMeasurement;
 
 // localStorage may be missing (private window, blocked site data): the app still works.
 function load(key, fallback) {
@@ -46,18 +37,77 @@ function store(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* not persistent */ }
 }
 
-function say(text, isError = false) {
-  ui.message.textContent = text;
-  ui.message.classList.toggle('error', isError);
+let language = pickLanguage(load(LANGUAGE_KEY, null), navigator.languages ?? [navigator.language ?? 'en']);
+let kg;
+let when;
+let tracker = new MeasurementTracker();
+let frameCount = 0;
+let logLines = [];
+let exportRows = []; // every frame of the session, for the CSV download
+let source = 'watch'; // how frames arrive: watch, scan or replay
+let weighStartCounter = null; // counter when a weight appeared, until a final frame or 0 kg
+let stopCurrent = null; // stops the listening or replay in progress
+let onMeasurement = saveMeasurement;
+// What is on screen, kept as keys and raw values so a language change can redraw it.
+let currentWeight = null;
+let stateKey = 'notListening';
+let lastMessage = null;
+
+const formatKg = (value) => kg.format(value);
+
+function t(key, params = {}) {
+  const value = STRINGS[language][key];
+  return typeof value === 'function' ? value(params, formatKg) : value;
+}
+
+function say(key, params, isError = false) {
+  lastMessage = { key, params, isError };
+  renderMessage();
+}
+
+function renderMessage() {
+  ui.message.textContent = lastMessage ? t(lastMessage.key, lastMessage.params) : '';
+  ui.message.classList.toggle('error', Boolean(lastMessage?.isError));
+}
+
+function setReadingState(state, key) {
+  ui.reading.dataset.state = state;
+  stateKey = key;
+  ui.state.textContent = t(key);
+}
+
+function renderWeight() {
+  ui.weight.textContent = currentWeight === null ? t('weightPlaceholder') : kg.format(currentWeight);
+}
+
+function applyLanguage(next) {
+  language = next;
+  kg = new Intl.NumberFormat(language, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  when = new Intl.DateTimeFormat(language, { dateStyle: 'short', timeStyle: 'short' });
+  document.documentElement.lang = language;
+  document.title = t('title');
+  for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
+  for (const el of document.querySelectorAll('[data-i18n-html]')) el.innerHTML = t(el.dataset.i18nHtml);
+  for (const el of document.querySelectorAll('[data-i18n-label]')) el.setAttribute('aria-label', t(el.dataset.i18nLabel));
+  for (const button of document.querySelectorAll('[data-lang]')) button.setAttribute('aria-pressed', String(button.dataset.lang === language));
+  ui.state.textContent = t(stateKey);
+  renderWeight();
+  renderHistory();
+  renderMessage();
+}
+
+function applyTheme(choice) {
+  if (choice === 'light' || choice === 'dark') document.documentElement.dataset.theme = choice;
+  else delete document.documentElement.dataset.theme;
+  for (const button of document.querySelectorAll('[data-theme-choice]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.themeChoice === choice));
+  }
 }
 
 function setActive(active) {
   ui.listen.hidden = active;
   ui.stop.hidden = !active;
-  if (!active) {
-    ui.reading.dataset.state = 'off';
-    ui.state.textContent = 'Not listening';
-  }
+  if (!active) setReadingState('off', 'notListening');
 }
 
 function resetReading() {
@@ -66,7 +116,8 @@ function resetReading() {
   logLines = [];
   exportRows = [];
   weighStartCounter = null;
-  ui.weight.textContent = '--.--';
+  currentWeight = null;
+  renderWeight();
   ui.mac.textContent = ui.rssi.textContent = '—';
   ui.frames.textContent = '0';
   ui.log.textContent = '';
@@ -77,17 +128,17 @@ function handleFrame(frame, rssi) {
   ui.frames.textContent = String(frameCount);
   ui.mac.textContent = frame.mac;
   if (rssi != null && rssi !== RSSI_UNAVAILABLE) ui.rssi.textContent = `${rssi} dBm`;
-  ui.weight.textContent = kg.format(frame.weightKg);
-  const state = frame.final ? 'final' : frame.weightKg > 0 ? 'measuring' : 'idle';
-  ui.reading.dataset.state = state;
-  ui.state.textContent = { final: 'Final', measuring: 'Measuring…', idle: 'Step on the scale' }[state];
+  currentWeight = frame.weightKg;
+  renderWeight();
+  if (frame.final) setReadingState('final', 'final');
+  else if (frame.weightKg > 0) setReadingState('measuring', 'measuring');
+  else setReadingState('idle', 'stepOn');
 
-  const time = new Date().toLocaleTimeString();
-  logLines.unshift(`${time}  ${frame.hex}  ${kg.format(frame.weightKg)} kg  state 0x${frame.state.toString(16).padStart(2, '0')}`);
+  const status = `0x${frame.state.toString(16).padStart(2, '0')}`;
+  logLines.unshift(`${new Date().toLocaleTimeString(language)}  ${frame.hex}  ${kg.format(frame.weightKg)} kg  ${status}`);
   logLines.length = Math.min(logLines.length, LOG_MAX);
   ui.log.textContent = logLines.join('\n');
   if (exportRows.length < EXPORT_MAX) {
-    const status = `0x${frame.state.toString(16).padStart(2, '0')}`;
     exportRows.push([new Date().toISOString(), source, rssi ?? '', status, frame.counter, frame.weightKg, frame.hex.replaceAll(' ', '')]);
   }
 
@@ -97,9 +148,7 @@ function handleFrame(frame, rssi) {
   } else if (frame.weightKg > 0) {
     weighStartCounter ??= frame.counter;
   } else if (weighStartCounter !== null) {
-    if (((frame.counter - weighStartCounter) & 0xffff) >= MIN_WEIGH_COUNTS) {
-      say('The weight went back to zero without a final reading. Try again and stay on the scale until "Final" shows up.');
-    }
+    if (((frame.counter - weighStartCounter) & 0xffff) >= MIN_WEIGH_COUNTS) say('noFinalReading');
     weighStartCounter = null;
   }
 
@@ -112,7 +161,7 @@ function saveMeasurement(measurement) {
   history.unshift({ time: Date.now(), weightKg: measurement.weightKg, mac: measurement.mac, state: measurement.state });
   store(HISTORY_KEY, history.slice(0, HISTORY_MAX));
   renderHistory();
-  say(`Measurement saved: ${kg.format(measurement.weightKg)} kg.`);
+  say('measurementSaved', { weight: measurement.weightKg });
 }
 
 function renderHistory() {
@@ -161,11 +210,11 @@ async function pickScale() {
 async function listen() {
   const mode = bluetoothMode();
   if (mode === 'missing') {
-    say('This browser has no Web Bluetooth: use Chrome or Edge on a desktop, from an https page.', true);
+    say('noBluetooth', {}, true);
     return;
   }
   if (mode === 'no-advertisements') {
-    say('The browser does not expose advertisements: enable the "Experimental Web Platform features" flag (see "How to use it") and restart it.', true);
+    say('noAdvertisements', {}, true);
     return;
   }
   stop();
@@ -196,15 +245,11 @@ async function listen() {
       };
     }
     setActive(true);
-    ui.reading.dataset.state = 'idle';
-    ui.state.textContent = 'Waiting for the scale';
-    say('Listening. Step on the scale and stand still until the weight is final.');
+    setReadingState('idle', 'waiting');
+    say('listening');
   } catch (err) {
-    if (err.name === 'NotFoundError' && /cancel/i.test(err.message)) {
-      say('No scale picked. Wake it up with your foot and try again: it only shows up in the dialog while it broadcasts.');
-    } else {
-      say(`Cannot listen to the scale: ${err.message}`, true);
-    }
+    if (err.name === 'NotFoundError' && /cancel/i.test(err.message)) say('noScalePicked');
+    else say('cannotListen', { error: err.message }, true);
   }
 }
 
@@ -223,11 +268,11 @@ async function replay(file) {
   try {
     frames = scaleFramesFromPklg(await file.arrayBuffer());
   } catch (err) {
-    say(`Unreadable file: ${err.message}`, true);
+    say('unreadableFile', { error: err.message }, true);
     return;
   }
   if (frames.length === 0) {
-    say(`${file.name}: no scale frames.`, true);
+    say('noFramesInFile', { file: file.name }, true);
     return;
   }
   const finals = [];
@@ -236,7 +281,7 @@ async function replay(file) {
   let timer;
   stopCurrent = () => clearTimeout(timer);
   setActive(true);
-  say(`Replaying ${file.name}: ${frames.length} frames at ${REPLAY_SPEED}× speed.`);
+  say('replaying', { file: file.name, count: frames.length, speed: REPLAY_SPEED });
 
   const step = (i) => {
     const frame = parseScaleFrame(frames[i].data);
@@ -249,9 +294,8 @@ async function replay(file) {
     stopCurrent = null;
     ui.listen.hidden = false;
     ui.stop.hidden = true;
-    say(finals.length
-      ? `End of capture. Final weight: ${finals.map((w) => `${kg.format(w)} kg`).join(', ')} (not saved to the history).`
-      : 'End of capture: no frame with a final weight.');
+    if (finals.length) say('endWithFinal', { weights: finals });
+    else say('endNoFinal');
   };
   step(0);
 }
@@ -259,7 +303,7 @@ async function replay(file) {
 // The frames of the session as CSV: what the browser really received, to diagnose a weigh-in.
 function downloadFrames() {
   if (exportRows.length === 0) {
-    say('No frames received yet.');
+    say('noFramesYet');
     return;
   }
   const header = 'time,source,rssi,status,counter,weight_kg,frame';
@@ -276,7 +320,7 @@ ui.listen.addEventListener('click', listen);
 ui.downloadLog.addEventListener('click', downloadFrames);
 ui.stop.addEventListener('click', () => {
   stop();
-  say('Stopped listening.');
+  say('stopped');
 });
 ui.replayFile.addEventListener('change', () => {
   const [file] = ui.replayFile.files;
@@ -284,12 +328,25 @@ ui.replayFile.addEventListener('change', () => {
   if (file) replay(file);
 });
 ui.clearHistory.addEventListener('click', () => {
-  if (!confirm('Delete all the measurements saved in this browser?')) return;
+  if (!confirm(t('confirmClear'))) return;
   store(HISTORY_KEY, []);
   renderHistory();
 });
+for (const button of document.querySelectorAll('[data-lang]')) {
+  button.addEventListener('click', () => {
+    store(LANGUAGE_KEY, button.dataset.lang);
+    applyLanguage(button.dataset.lang);
+  });
+}
+for (const button of document.querySelectorAll('[data-theme-choice]')) {
+  button.addEventListener('click', () => {
+    store(THEME_KEY, button.dataset.themeChoice);
+    applyTheme(button.dataset.themeChoice);
+  });
+}
 
-renderHistory();
+applyTheme(load(THEME_KEY, 'auto'));
+applyLanguage(language);
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => { /* the app works without it too */ });
 }

@@ -9,65 +9,77 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <script>
+    // Apply the saved theme before the first paint, so the page never flashes the wrong colours.
+    try {
+      const theme = JSON.parse(localStorage.getItem('ble-scale:theme'));
+      if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+    } catch { /* no saved theme */ }
+  </script>
   <link rel="stylesheet" href="style.css">
   <script type="module" src="app.js"></script>
 </head>
 <body>
   <main>
-    <header>
-      <h1>BLE Scale</h1>
-      <p class="muted">Reads the weight from the scale's advertisements, without connecting.</p>
+    <header class="top">
+      <div>
+        <h1 data-i18n="title">BLE Scale</h1>
+        <p class="muted" data-i18n="subtitle">Reads the weight from the scale's advertisements, without connecting.</p>
+      </div>
+      <div class="prefs">
+        <div class="toggle" role="group" aria-label="Language" data-i18n-label="language">
+          <button type="button" data-lang="en" lang="en">EN</button>
+          <button type="button" data-lang="it" lang="it">IT</button>
+        </div>
+        <div class="toggle" role="group" aria-label="Theme" data-i18n-label="theme">
+          <button type="button" data-theme-choice="auto" data-i18n="themeAuto">Auto</button>
+          <button type="button" data-theme-choice="light" data-i18n="themeLight">Light</button>
+          <button type="button" data-theme-choice="dark" data-i18n="themeDark">Dark</button>
+        </div>
+      </div>
     </header>
 
     <section id="reading" class="card reading" data-state="off" aria-live="polite">
       <div class="weight"><span id="weight">--.--</span> <span class="unit">kg</span></div>
       <div id="state" class="state">Not listening</div>
       <dl class="meta">
-        <div><dt>Scale</dt><dd id="mac">—</dd></div>
-        <div><dt>Signal</dt><dd id="rssi">—</dd></div>
-        <div><dt>Frames</dt><dd id="frames">0</dd></div>
+        <div><dt data-i18n="scale">Scale</dt><dd id="mac">—</dd></div>
+        <div><dt data-i18n="signal">Signal</dt><dd id="rssi">—</dd></div>
+        <div><dt data-i18n="frames">Frames</dt><dd id="frames">0</dd></div>
       </dl>
     </section>
 
     <div class="actions">
-      <button id="listen" class="primary" type="button">Listen to the scale</button>
-      <button id="stop" type="button" hidden>Stop</button>
-      <label class="button" for="replay-file">Replay a .pklg capture</label>
+      <button id="listen" class="primary" type="button" data-i18n="listen">Listen to the scale</button>
+      <button id="stop" type="button" data-i18n="stop" hidden>Stop</button>
+      <label class="button" for="replay-file" data-i18n="replay">Replay a .pklg capture</label>
       <input id="replay-file" type="file" accept=".pklg" hidden>
     </div>
     <p id="message" class="message" role="status"></p>
 
     <section class="card">
-      <h2>Saved measurements</h2>
+      <h2 data-i18n="saved">Saved measurements</h2>
       <ol id="history" class="history"></ol>
-      <p id="history-empty" class="muted">No measurements saved yet.</p>
-      <button id="clear-history" class="link" type="button" hidden>Clear history</button>
+      <p id="history-empty" class="muted" data-i18n="noSaved">No measurements saved yet.</p>
+      <button id="clear-history" class="link" type="button" data-i18n="clearHistory" hidden>Clear history</button>
     </section>
 
     <details class="card">
-      <summary>How to use it</summary>
+      <summary data-i18n="howTo">How to use it</summary>
       <ol class="steps">
-        <li>Use Chrome or Edge on a computer with Bluetooth turned on.</li>
-        <li>Open <code>chrome://flags/#enable-experimental-web-platform-features</code> (in Edge
-          <code>edge://flags/…</code>), set it to <em>Enabled</em> and restart the browser. Web Bluetooth
-          still keeps advertisement scanning behind this flag.</li>
-        <li>Wake the scale up by tapping it with your foot, then press <strong>Listen to the scale</strong>
-          and pick the device in the browser's dialog (it may have no name).</li>
-        <li>Step on and stand still until the reading turns <strong>final</strong>, about 10 seconds:
-          the measurement is saved in this browser's history. The scale confirms the weight a few
-          seconds after it stops changing.</li>
+        <li data-i18n-html="step1Html"></li>
+        <li data-i18n-html="step2Html"></li>
+        <li data-i18n-html="step3Html"></li>
+        <li data-i18n-html="step4Html"></li>
       </ol>
-      <p class="muted">The scale does not accept connections: the browser listens to its advertisements.
-        The phone app also sends it the time and an acknowledgement, which a browser cannot do; the
-        scale broadcasts the weight anyway.</p>
-      <p class="muted">Without a scale you can check the decoding with <strong>Replay a .pklg
-        capture</strong>, which plays back a PacketLogger capture at 4× speed.</p>
+      <p class="muted" data-i18n="note1"></p>
+      <p class="muted" data-i18n-html="note2Html"></p>
     </details>
 
     <details class="card">
-      <summary>Received frames</summary>
+      <summary data-i18n="receivedFrames">Received frames</summary>
       <pre id="log" class="log"></pre>
-      <button id="download-log" class="link" type="button">Download all frames of this session (CSV)</button>
+      <button id="download-log" class="link" type="button" data-i18n="downloadFrames">Download all frames of this session (CSV)</button>
     </details>
   </main>
 </body>
